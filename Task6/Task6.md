@@ -26,9 +26,11 @@ To recover access to the database:
 5. Mattermost’s configuration files were updated to reflect the corrected database credentials.
 
 After these changes, the Mattermost server started successfully and connected to the database without error.
+
 ![Task6-1.png](Images/Task6-1.png)
 #### Mattermost Access and Initial Limitations
 With the server operational, I logged in using the credentials provided in `user.txt`. Upon login, only a single public channel `Public` was available to chat in. No administrative permissions were granted to my account, and I could not directly join other channels.
+
 ![Task6-2.png](Images/Task6-2.png)
 #### Chatbot Integration
 Further investigation showed that the Mattermost instance integrates with a **custom Python chatbot**, which interacts with user messages and executes server-side logic. Unlike the malware analyzed in previous tasks, the source code was fully readable and not obfuscated.
@@ -40,9 +42,11 @@ After installing the necessary dependencies, I attempted to start the chatbot by
 ```
 
 Investigating the source code reveals that the program requires an `.env` configuration file containing the bot's Mattermost token and the team name. I located the team name `malwarecentral` within the current URL of my web browser. The instance's database stores the bot token within the table `useraccesstokens`. With the `.env` file created, the chatbot successfully connected and displayed an announcement message.
+
 ![Task6-3.png](Images/Task6-3.png)
 #### Identifying Authorization Logic Flaws in the Chatbot
 The focus shifted to analyzing the chatbot’s command-handling logic to identify input that could be abused to enumerate channels, escalate privileges, or otherwise gain access to adversary-controlled channels. When starting a direct message with the chatbot, known as `malbot`, it sends a list of all available commands.
+
 ![Task6-4.png](Images/Task6-4.png)
 
 These appear to be a mix of commands that display system uptime and disk space, manage malware offerings for sale and channel posts, or update the `malbot's` announcement message. Each command's exact logic is available in the provided source. During my review through each, I found a programming oversight in the `!nego` command, which allows users to create negotiation channels for posted offerings.
@@ -174,12 +178,14 @@ def handle_nego(self : Plugin, message: Message, *args):
 Given that I already have access to the `Public` channel in the adversary's Mattermost team, I can invoke `!nego` in a specific manner that allows me to move into another existing private channel. However, the target channel must not already contain the two users and the required moderator supplied to the command.
 
 The username of our adversary must be `admin_shamefulmussel79`, as only this user appears to hold admin privileges. They are not a member of `Public`, so lateral movement must be performed to gain access to the right channel. By querying the Mattermost database to enumerate channels and their memberships, the adversary only appears in the channel `channel1592`. I cannot directly move there from `Public`, so the list identified the first channel to join, `Channel 57733`. The command `!nego channel57733 excitedmacaw62 pridefulhare82 mod_obsessedsnail10` succeeded, granting access to `Channel 57733`.
+
 ![Task6-5.png](Images/Task6-5.png)
 
 Because the adversary was not directly reachable from `Public`, the exploit required chaining multiple `!nego` invocations to progressively pivot into intermediary private channels until the adversary’s channel was reached. The remaining commands granted access to the target channel:
 - `!nego channel98103 excitedmacaw62 gloomyhawk74 mod_grizzledfalcon11`
 - `!nego channel55475 awedwhiting4 gloomyhawk74 mod_shamefulbaboon72`
 - `!nego channel1592 awedwhiting4 betrayedhoopoe64 mod_grudginglemur63`
+
 ![Task6-6.png](Images/Task6-6.png)
 ### Result
 With the adversary's channel now accessible, the following sequence of `malbot` commands was submitted as the solution for Task 6:

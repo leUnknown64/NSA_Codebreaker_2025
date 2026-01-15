@@ -123,6 +123,7 @@ At a high level, the program performs the following steps:
 
 ### Result
 I reimplemented all the decoding logic in C and executed it against the recovered base64 input string. Because the payload was initially loaded into memory, the encoded string could be recovered directly from the Volatility dumps. The same string was also embedded near the end of the extracted ELF and confirmed via Ghidra's `Search For Encoded Strings` utility.
+
 ![Task3-1.png](Images/Task3-1.png)
 
 Instead of modifying system files, the reconstructed program printed the decoded output to standard output. This output revealed the list of malicious IP addresses and domains that would have been written to `/etc/hosts`.

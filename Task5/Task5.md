@@ -11,9 +11,11 @@ Task 5 introduced no new material for analysis. Instead, it required correlating
 Building on the results from Task 4, I returned to the extracted payload and focused on its network communication logic. The dropped payload contains a `Comms` class responsible for all client–server communication. Analysis in Ghidra showed that this class implements custom encryption and message-handling routines, while relying on the OpenSSL library for cryptographic primitives.
 #### The `Comms` Class and Encryption Scheme
 Within the `Comms` class, member functions retained their original names:
+
 ![Task5-1.png](Images/Task5-1.png)
 
-Further inspection revealed that the payload uses **AES-128 in ECB mode**, implemented via OpenSSL, for encrypting application-level messages. 
+Further inspection revealed that the payload uses **AES-128 in ECB mode**, implemented via OpenSSL, for encrypting application-level messages.
+
 ![Task5-2.png](Images/Task5-2.png)
 
 The AES keys are generated during construction of the `Comms` object and are later exchanged during a handshake process with the remote server.
@@ -23,9 +25,11 @@ At this stage, I revisited the packet capture provided in Task 2 and opened it i
 The full handshake proceeds as follows:
 1. **RSA public key exchange:**
     The server sends an RSA public key to the client in plaintext, which is stored internally within the `Comms` object.
+    
     ![Task5-3.png](Images/Task5-3.png)
     
     This exchange is visible directly in the packet capture.
+    
     ![Task5-4.png](Images/Task5-4.png)
     
 2. **AES key exchange:**
@@ -45,7 +49,8 @@ Because the RSA private key is not available, it is not possible to directly dec
 
 To better understand how these keys are generated, I shifted focus back to the payload and began analyzing the `Comms::gen_key` routine, which is invoked during object construction. This function is responsible for generating the AES session keys and is critical to understanding how the encrypted traffic could be recovered under controlled execution.
 #### Key Generation Weakness
-Further analysis of the `Comms::gen_key` routine showed that actual key material generation occurs within the nested `generate_key` function. 
+Further analysis of the `Comms::gen_key` routine showed that actual key material generation occurs within the nested `generate_key` function.
+
 ![Task5-5.png](Images/Task5-5.png)
 
 While the function initially reads 32 bytes of random data from `/dev/random`, the majority of this entropy is intentionally discarded. After computing an HMAC whose output is never used, the function explicitly zeroes most of the buffer and right-shifts the remaining data by 38 bits. As a result, the generated AES keys contain only **26 bits of effective entropy** (or 2^26 = 67,108,864 possible keys), with the remaining bits set to zero. This severely weakens the cryptographic strength of the session keys, making them trivial to brute-force using modern hardware.
@@ -141,11 +146,13 @@ This weakness becomes particularly significant when examining how the malware en
 Inspection of the `send_message` routine revealed that outbound messages are encrypted **twice** using AES-128 in ECB mode:
 - Plaintext is encrypted with the first AES key
 - The resulting ciphertext is encrypted again using a second AES key
+
 	![Task5-6.png](Images/Task5-6.png)
 
 Message decryption occurs in the reverse order:
 - Ciphertext is decrypted with the second key
 - The result is decrypted with the first key to recover the plaintext
+
 	![Task5-7.png](Images/Task5-7.png)
 
 Although double encryption might appear to add security, the extremely weak key generation combined with ECB mode negates any real cryptographic benefit.
