@@ -13,6 +13,7 @@ Early in the review, suspicious TCP communication was observed between an endpoi
 Something immediately stood out: none of the TCP flags were set in these packets. This behavior is highly unusual for standard TCP communication. Wireshark filtering using `tcp.flags == 0` was used to isolate these packets for further analysis.
 
 Closer inspection revealed that the first packet in this exchange contained an RSA public key sent in plaintext from the external server to the internal endpoint.
+
 ![Task2-2.png](Images/Task2-2.png)
 
 Subsequent packets consisted of unreadable random or encrypted data. Notably, the server later sent a plaintext status message of `KEY_RECEIVED` back to the endpoint.
