@@ -1,6 +1,6 @@
 # Task 7 - Finale - (Vulnerability Research, Exploitation)
-## Date started: November 26, 2025
-## Date completed: December 22, 2025
+### Date started: November 26, 2025
+### Date completed: December 22, 2025
 ## Provided Materials
 - Custom app (mmarchiver.apk)
 - Licenses (licenses.txt)

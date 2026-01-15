@@ -1,6 +1,6 @@
 # Task 5 - Putting it all together - (Cryptanalysis)
-## Date started: October 23, 2025
-## Date completed: November 12, 2025
+### Date started: October 23, 2025
+### Date completed: November 12, 2025
 ## Provided Materials
 - None
 ## Objective

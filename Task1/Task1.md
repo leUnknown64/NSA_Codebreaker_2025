@@ -1,6 +1,6 @@
 # Task 1 - Getting Started - (Forensics)
-## Date started: September 24, 2025
-## Date completed: September 24, 2025
+### Date started: September 24, 2025
+### Date completed: September 24, 2025
 ## Provided Materials
 - Zipped EXT2 image (image.ext2.zip)
 ## Objective

@@ -1,6 +1,6 @@
 # Task 6 - Crossing the Channel - (Vulnerability Research)
-## Date started: November 12, 2025
-## Date completed: November 26, 2025
+### Date started: November 12, 2025
+### Date completed: November 26, 2025
 ## Provided Materials
 - Mattermost instance (volumes.tar.gz)
 - User login (user.txt)

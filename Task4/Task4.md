@@ -1,6 +1,6 @@
 # Task 4 - Unpacking Insight - (Malware Analysis)
-## Date started: October 12, 2025
-## Date completed: October 23, 2025
+### Date started: October 12, 2025
+### Date completed: October 23, 2025
 ## Provided Materials
 - Obfuscated file (suspicious)
 ## Objective

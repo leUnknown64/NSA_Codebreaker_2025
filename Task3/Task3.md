@@ -1,6 +1,6 @@
 # Task 3 - Digging deeper - (Reverse Engineering)
-## Date started: September 28, 2025
-## Date completed: October 12, 2025
+### Date started: September 28, 2025
+### Date completed: October 12, 2025
 ## Provided Materials
 - Memory dump (memory.dump.gz)
 - Metadata (System.map.br)

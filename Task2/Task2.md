@@ -1,6 +1,6 @@
 # Task 2 - The hunt continues - (Network Forensics)
-## Date started: September 24, 2025
-## Date completed: September 28, 2025
+### Date started: September 24, 2025
+### Date completed: September 28, 2025
 ## Provided Materials
 - PCAP file (traffic.pcap)
 ## Objective
