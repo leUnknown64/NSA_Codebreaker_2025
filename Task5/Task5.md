@@ -22,11 +22,11 @@ The AES keys are generated during construction of the `Comms` object and are lat
 ### Correlating Network Traffic with Code Behavior
 At this stage, I revisited the packet capture provided in Task 2 and opened it in Wireshark, filtering traffic between the infected endpoint and the attacker-controlled server. The observed packet sequence aligned closely with the logic implemented in the `full_handshake` function from `Comms`.
 
+![Task5-3.png](Images/Task5-3.png)
+
 The full handshake proceeds as follows:
 1. **RSA public key exchange:**
     The server sends an RSA public key to the client in plaintext, which is stored internally within the `Comms` object.
-    
-    ![Task5-3.png](Images/Task5-3.png)
     
     This exchange is visible directly in the packet capture.
     
@@ -34,10 +34,12 @@ The full handshake proceeds as follows:
     
 2. **AES key exchange:**
 	The client encrypts the generated AES keys using the received RSA public key. These encrypted AES keys are then sent back to the server in one message.
-    
+
 3. **Handshake confirmation:**  
 	The server responds with a plaintext message containing the string `KEY_RECEIVED`, confirming successful receipt of the AES keys.
-    
+	
+	![Task5-5.png](Images/Task5-5.png)
+
 4. **Application handshake (AES-encrypted):**
     Following the key exchange, both sides transition to encrypted communication:
     - The client sends an AES-encrypted message beginning with the marker `0xdec0dec0ffee`, followed by the string `REQCONN`.
@@ -51,7 +53,7 @@ To better understand how these keys are generated, I shifted focus back to the p
 ### Key Generation Weakness
 Further analysis of the `Comms::gen_key` routine showed that actual key material generation occurs within the nested `generate_key` function.
 
-![Task5-5.png](Images/Task5-5.png)
+![Task5-6.png](Images/Task5-6.png)
 
 While the function initially reads 32 bytes of random data from `/dev/random`, the majority of this entropy is intentionally discarded. After computing an HMAC whose output is never used, the function explicitly zeroes most of the buffer and right-shifts the remaining data by 38 bits. As a result, the generated AES keys contain only **26 bits of effective entropy** (or 2^26 = 67,108,864 possible keys), with the remaining bits set to zero. This severely weakens the cryptographic strength of the session keys, making them trivial to brute-force using modern hardware.
 
@@ -147,13 +149,13 @@ Inspection of the `send_message` routine revealed that outbound messages are enc
 - Plaintext is encrypted with the first AES key
 - The resulting ciphertext is encrypted again using a second AES key
 
-	![Task5-6.png](Images/Task5-6.png)
+	![Task5-7.png](Images/Task5-7.png)
 
 Message decryption occurs in the reverse order:
 - Ciphertext is decrypted with the second key
 - The result is decrypted with the first key to recover the plaintext
 
-	![Task5-7.png](Images/Task5-7.png)
+	![Task5-8.png](Images/Task5-8.png)
 
 Although double encryption might appear to add security, the extremely weak key generation combined with ECB mode negates any real cryptographic benefit.
 ### Meet-in-the-Middle Attack Feasibility
