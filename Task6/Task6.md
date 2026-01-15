@@ -28,10 +28,12 @@ To recover access to the database:
 After these changes, the Mattermost server started successfully and connected to the database without error.
 
 ![Task6-1.png](Images/Task6-1.png)
+
 #### Mattermost Access and Initial Limitations
 With the server operational, I logged in using the credentials provided in `user.txt`. Upon login, only a single public channel `Public` was available to chat in. No administrative permissions were granted to my account, and I could not directly join other channels.
 
 ![Task6-2.png](Images/Task6-2.png)
+
 #### Chatbot Integration
 Further investigation showed that the Mattermost instance integrates with a **custom Python chatbot**, which interacts with user messages and executes server-side logic. Unlike the malware analyzed in previous tasks, the source code was fully readable and not obfuscated.
 
@@ -44,6 +46,7 @@ After installing the necessary dependencies, I attempted to start the chatbot by
 Investigating the source code reveals that the program requires an `.env` configuration file containing the bot's Mattermost token and the team name. I located the team name `malwarecentral` within the current URL of my web browser. The instance's database stores the bot token within the table `useraccesstokens`. With the `.env` file created, the chatbot successfully connected and displayed an announcement message.
 
 ![Task6-3.png](Images/Task6-3.png)
+
 #### Identifying Authorization Logic Flaws in the Chatbot
 The focus shifted to analyzing the chatbot’s command-handling logic to identify input that could be abused to enumerate channels, escalate privileges, or otherwise gain access to adversary-controlled channels. When starting a direct message with the chatbot, known as `malbot`, it sends a list of all available commands.
 
@@ -187,6 +190,7 @@ Because the adversary was not directly reachable from `Public`, the exploit requ
 - `!nego channel1592 awedwhiting4 betrayedhoopoe64 mod_grudginglemur63`
 
 ![Task6-6.png](Images/Task6-6.png)
+
 ### Result
 With the adversary's channel now accessible, the following sequence of `malbot` commands was submitted as the solution for Task 6:
 - `!nego channel57733 excitedmacaw62 pridefulhare82 mod_obsessedsnail10` 

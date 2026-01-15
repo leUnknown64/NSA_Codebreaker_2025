@@ -11,6 +11,7 @@ I began by opening the provided PCAP file in Wireshark, which contained over 2,0
 Early in the review, suspicious TCP communication was observed between an endpoint within the internal network (`192.168.3.89`) and an external server (`203.0.113.108`).
 
 ![Task2-1.png](Images/Task2-1.png)
+
 Something immediately stood out: none of the TCP flags were set in these packets. This behavior is highly unusual for standard TCP communication. Wireshark filtering using `tcp.flags == 0` was used to isolate these packets for further analysis.
 
 Closer inspection revealed that the first packet in this exchange contained an RSA public key sent in plaintext from the external server to the internal endpoint.

@@ -13,10 +13,12 @@ To analyze and interact with the provided application (`mmarchiver.apk`), a mode
 Upon installation, notifications needed to first be enabled via system settings. The app is appropriately titled `Mattermost Archiver` and uses the same icon as the official Mattermost client (as shown in the bottom right of the screenshot below).
 
 ![Task7-1.png](Images/Task7-1.png)
+
 #### Application Functionality Overview
 After launching the `Mattermost Archiver` app, the user is prompted to configure connection details for a Mattermost server. Based on runtime behavior and observed output, the app functions as an automated Mattermost archiver client.
 
 ![Task7-2.png](Images/Task7-2.png)
+
 > Note: The IP address `10.0.2.2` is used by Android Studio's AVDs to communicate with the host machine. In this case, it points to the Mattermost instance configured during Task 6.
 
 After authentication via Single Sign-On (SSO), the application performs the following actions:
@@ -29,12 +31,15 @@ The screenshots shown below demonstrate the end-to-end workflow:
 1. Files uploaded to the Mattermost instance
 
 ![Task7-3.png](Images/Task7-3.png)
+
 2.  User initiates the archiving process
 
 ![Task7-3.png](Images/Task7-4.png)
+
 3. Archived files appear in local device storage
 
 ![Task7-5.png](Images/Task7-5.png)
+
 #### Security-Relevant Design Observations
 Several characteristics of the application immediately stood out from a security perspective:
 - **Unrestricted file ingestion**: All files accessible via the Mattermost team are processed without filtering or validation.
@@ -74,6 +79,7 @@ Once decompiled, the source code could be inspected in Android Studio.
 One notable observation from both static analysis and runtime behavior was the application’s extensive use of Android’s native `Log` utility. The app logs detailed information about file downloads, file paths, archive creation, exceptions during processing, and more.
 
 ![Task7-6.png](Images/Task7-6.png)
+
 #### Dynamic Analysis with Frida
 Rather than performing further static analysis, I opted to observe these logs directly during execution. To capture these runtime log messages, I used [Frida](https://github.com/frida/frida), a toolkit that allows method-level hooking in running Android applications. Because Frida requires elevated privileges on Android, I first rooted the Android Virtual Device using [rootAVD](https://gitlab.com/newbit/rootAVD), then installed the Frida server on the emulator. With Frida attached to the running process, I intercepted calls to Android's `Log` methods to capture debug output in real time.
 ```powershell
