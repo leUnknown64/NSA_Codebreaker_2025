@@ -237,6 +237,7 @@ I first attempted directory traversal attacks at the ZIP entry extraction stage 
 - Relative path traversal (`../` and `..\`)
 - Absolute paths
 - URL-encoded path separators
+
 In all cases, Android’s ZIP handling APIs raised exceptions, effectively blocking traversal at extraction time. This indicated that entry-level path sanitization was correctly enforced by the underlying Android operating system. The application does not decode URL-encoded path separators either.
 
 Although direct ZIP slip attempts failed, the application’s behavior during extraction still warranted further analysis. At this point, I reviewed the filesystem layout created during ZIP processing to determine where extracted content was written and what directories were adjacent to the extraction path. This analysis revealed a critical insight: `com.badguy.mmarchiver/cache/zippier/extract` and `com.badguy.mmarchiver/cache/zippier/formats` share the same parent directory. This meant that escaping the ZIP extraction directory by even a single directory level could allow controlled writes into the `formats` directory, which the application uses for dynamic plugin loading.
