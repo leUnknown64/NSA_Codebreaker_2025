@@ -45,6 +45,7 @@ Several characteristics of the application immediately stood out from a security
 - **Unrestricted file ingestion**: All files accessible via the Mattermost team are processed without filtering or validation.
 - **Implicit trust in file contents**: Files are treated as safe solely based on their ability in Mattermost, regardless of origin or structure.
 - **Automated processing pipeline**: Once started, the application downloads and processes files without additional user confirmation.
+
 These properties establish a critical trust boundary: any file uploaded to the Mattermost team may be parsed and processed automatically. This creates a clear opportunity for malicious file-based exploitation.
 ### Static Analysis - Decompiling Mattermost Archiver
 Because the application was distributed only as a compiled Android package (`.apk`) with no available source code, static analysis required reverse engineering the application’s bytecode into a human-readable language.
@@ -307,6 +308,7 @@ The plugin was compiled to Dalvik bytecode and packaged into a JAR file.
 By uploading a specially named ZIP archive (`...zip`) containing
 1. `formats/net.axolotl.zippier.ZipFormat_tar.jar` (the JAR must also contain valid bytecode)
 2. A file with the `.tar` extension.
+
 …the application extracted the malicious tar plugin and executed my code during archive processing. This resulted in reliable **remote code execution (RCE)** on the device.
 ## Results
 A ZIP archive named `...zip` with the described structure was sufficient to trigger directory traversal, malicious plugin deployment, and remote code execution. This archive was submitted as the solution for Task 7.

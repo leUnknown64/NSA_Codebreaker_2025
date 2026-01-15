@@ -58,6 +58,7 @@ Provided below is the source for the `!nego` command. A user must provide the fo
 - The channel's name
 - The seller's username
 - Two moderator's usernames
+
 When a user calls the command, `malbot` creates a new private channel containing that user, the seller, and the moderators. The command contains three critical vulnerabilities, which I have identified as comments within the source.
 ```python
 # VULNERABILITY: Missing authorization check.
