@@ -1,13 +1,13 @@
 # Task 3 - Digging deeper - (Reverse Engineering)
-### Date started: September 28, 2025
-### Date completed: October 12, 2025
-### Provided Materials
+## Date started: September 28, 2025
+## Date completed: October 12, 2025
+## Provided Materials
 - Memory dump (memory.dump.gz)
 - Metadata (System.map.br)
 - Kernel image (vmlinux.xz)
-### Objective
+## Objective
 Scour the device's memory dump and identify anomalous or malicious activity to find out what's going on. Submit a list of malicious IPs and domains.
-### Analysis
+## Analysis
 Task 3 shifted focus from disk and network artifacts to live memory analysis. To understand the purpose of the provided materials, each file was examined individually. This led to the use of Volatility, a popular memory forensics framework.
 
 Volatility was installed in a Linux environment using Python. The first step was understanding the operating environment captured in the memory dump. Using Volatility’s `banners` plugin, I identified the system as an OpenWRT-based Linux device, consistent with a network router rather than a traditional server or workstation.
@@ -121,7 +121,7 @@ At a high level, the program performs the following steps:
 - Appends the results to `/etc/hosts`
 - Restarts `dnsmasq` to apply changes
 
-### Result
+## Result
 I reimplemented all the decoding logic in C and executed it against the recovered base64 input string. Because the payload was initially loaded into memory, the encoded string could be recovered directly from the Volatility dumps. The same string was also embedded near the end of the extracted ELF and confirmed via Ghidra's `Search For Encoded Strings` utility.
 
 ![Task3-1.png](Images/Task3-1.png)

@@ -1,23 +1,23 @@
 # Task 6 - Crossing the Channel - (Vulnerability Research)
-### Date started: November 12, 2025
-### Date completed: November 26, 2025
-### Provided Materials
+## Date started: November 12, 2025
+## Date completed: November 26, 2025
+## Provided Materials
 - Mattermost instance (volumes.tar.gz)
 - User login (user.txt)
-### Objective
+## Objective
 Submit a series of commands, one per line, given to the Mattermost server which will allow you to gain access to a channel with the adversary.
-### Analysis
+## Analysis
 Unlike previous tasks, Task 6 did not require reverse engineering or cryptanalysis. Instead, it focused on deploying and interacting with a provided Mattermost collaboration platform in order to identify and exploit weaknesses in its configuration and auxiliary components. As a result, this task is more operational and interaction-heavy, with progress demonstrated primarily through environment setup, configuration changes, and in-application behavior.
-#### Environment Overview
+### Environment Overview
 The provided materials consisted of a Mattermost server instance and persistent volumes containing application data. Inspection of the contents revealed:
 - A Mattermost server backed by a **PostgreSQL 13** database
 - A custom **Python-based Mattermost chatbot**, with unobfuscated source code included
 - A single set of Mattermost user credentials, which represents the only valid login provided for the task
-#### Mattermost Deployment Issues
+### Mattermost Deployment Issues
 To bring the environment online, I followed Mattermost’s official Docker-based deployment [documentation](https://docs.mattermost.com/deployment-guide/server/containers/install-docker.html) and attempted to start the provided instance using the supplied volumes. The server failed to start successfully.
 
 Reviewing the container logs revealed authentication failures between Mattermost and PostgreSQL. Specifically, the configured database user password did not match the credentials stored in the database, indicating that the database was not using Mattermost’s default credentials.
-#### Database Recovery and Configuration Fix
+### Database Recovery and Configuration Fix
 To recover access to the database:
 1. PostgreSQL 13 was installed locally to match the version used by the Mattermost instance.
 2. The database volume was mounted directly for inspection.
@@ -29,12 +29,12 @@ After these changes, the Mattermost server started successfully and connected to
 
 ![Task6-1.png](Images/Task6-1.png)
 
-#### Mattermost Access and Initial Limitations
+### Mattermost Access and Initial Limitations
 With the server operational, I logged in using the credentials provided in `user.txt`. Upon login, only a single public channel `Public` was available to chat in. No administrative permissions were granted to my account, and I could not directly join other channels.
 
 ![Task6-2.png](Images/Task6-2.png)
 
-#### Chatbot Integration
+### Chatbot Integration
 Further investigation showed that the Mattermost instance integrates with a **custom Python chatbot**, which interacts with user messages and executes server-side logic. Unlike the malware analyzed in previous tasks, the source code was fully readable and not obfuscated.
 
 After installing the necessary dependencies, I attempted to start the chatbot by running the entry script `bot.py`. The script failed with the following log:
@@ -47,7 +47,7 @@ Investigating the source code reveals that the program requires an `.env` config
 
 ![Task6-3.png](Images/Task6-3.png)
 
-#### Identifying Authorization Logic Flaws in the Chatbot
+### Identifying Authorization Logic Flaws in the Chatbot
 The focus shifted to analyzing the chatbot’s command-handling logic to identify input that could be abused to enumerate channels, escalate privileges, or otherwise gain access to adversary-controlled channels. When starting a direct message with the chatbot, known as `malbot`, it sends a list of all available commands.
 
 ![Task6-4.png](Images/Task6-4.png)
@@ -177,7 +177,7 @@ def handle_nego(self : Plugin, message: Message, *args):
 	self.driver.reply_to(message, f"Created channel '{display_name}' and added users: {user1}, {user2}, {user3}")
 	logger.info(f"Created channel '{display_name}' and added users: {user1}, {user2}, {user3}")
 ```
-#### The Lateral Movement Exploit
+### The Lateral Movement Exploit
 Given that I already have access to the `Public` channel in the adversary's Mattermost team, I can invoke `!nego` in a specific manner that allows me to move into another existing private channel. However, the target channel must not already contain the two users and the required moderator supplied to the command.
 
 The username of our adversary must be `admin_shamefulmussel79`, as only this user appears to hold admin privileges. They are not a member of `Public`, so lateral movement must be performed to gain access to the right channel. By querying the Mattermost database to enumerate channels and their memberships, the adversary only appears in the channel `channel1592`. I cannot directly move there from `Public`, so the list identified the first channel to join, `Channel 57733`. The command `!nego channel57733 excitedmacaw62 pridefulhare82 mod_obsessedsnail10` succeeded, granting access to `Channel 57733`.
@@ -191,7 +191,7 @@ Because the adversary was not directly reachable from `Public`, the exploit requ
 
 ![Task6-6.png](Images/Task6-6.png)
 
-### Result
+## Result
 With the adversary's channel now accessible, the following sequence of `malbot` commands was submitted as the solution for Task 6:
 - `!nego channel57733 excitedmacaw62 pridefulhare82 mod_obsessedsnail10` 
 - `!nego channel98103 excitedmacaw62 gloomyhawk74 mod_grizzledfalcon11`

@@ -1,15 +1,15 @@
 # Task 5 - Putting it all together - (Cryptanalysis)
-### Date started: October 23, 2025
-### Date completed: November 12, 2025
-### Provided Materials
+## Date started: October 23, 2025
+## Date completed: November 12, 2025
+## Provided Materials
 - None
-### Objective
+## Objective
 Utilizing evidence gathered across all prior tasks, identify and recover the full URL of the adversary’s command-and-control server.
-### Analysis
+## Analysis
 Task 5 introduced no new material for analysis. Instead, it required correlating evidence and observations gathered throughout previous tasks to better understand the malware’s communication protocol and overall behavior. 
 
 Building on the results from Task 4, I returned to the extracted payload and focused on its network communication logic. The dropped payload contains a `Comms` class responsible for all client–server communication. Analysis in Ghidra showed that this class implements custom encryption and message-handling routines, while relying on the OpenSSL library for cryptographic primitives.
-#### The `Comms` Class and Encryption Scheme
+### The `Comms` Class and Encryption Scheme
 Within the `Comms` class, member functions retained their original names:
 
 ![Task5-1.png](Images/Task5-1.png)
@@ -19,7 +19,7 @@ Further inspection revealed that the payload uses **AES-128 in ECB mode**, imple
 ![Task5-2.png](Images/Task5-2.png)
 
 The AES keys are generated during construction of the `Comms` object and are later exchanged during a handshake process with the remote server.
-#### Correlating Network Traffic with Code Behavior
+### Correlating Network Traffic with Code Behavior
 At this stage, I revisited the packet capture provided in Task 2 and opened it in Wireshark, filtering traffic between the infected endpoint and the attacker-controlled server. The observed packet sequence aligned closely with the logic implemented in the `full_handshake` function from `Comms`.
 
 The full handshake proceeds as follows:
@@ -44,11 +44,11 @@ The full handshake proceeds as follows:
     - The server replies with an AES-encrypted message beginning with the same marker, followed by `REQCONN_OK`.
 
 Two more AES-encrypted messages were sent and captured, but their plaintext contents were initially unknown. Notably, all encrypted application-level messages begin with the byte sequence `0xdec0dec0ffee`, which appears to function as a message header.
-#### Limitations and Further Investigation
+### Limitations and Further Investigation
 Because the RSA private key is not available, it is not possible to directly decrypt the AES keys exchanged during the handshake from the packet capture alone. As a result, the contents of subsequent AES-encrypted messages cannot be recovered statically.
 
 To better understand how these keys are generated, I shifted focus back to the payload and began analyzing the `Comms::gen_key` routine, which is invoked during object construction. This function is responsible for generating the AES session keys and is critical to understanding how the encrypted traffic could be recovered under controlled execution.
-#### Key Generation Weakness
+### Key Generation Weakness
 Further analysis of the `Comms::gen_key` routine showed that actual key material generation occurs within the nested `generate_key` function.
 
 ![Task5-5.png](Images/Task5-5.png)
@@ -142,7 +142,7 @@ After running the program, the below is printed:
 After running the key generation a couple times, the last 12 bytes are always zeroed out while the leading four appear to be random. By slightly modifying the program to generate 100,000 keys, the structure was identified. Each generated AES key follows the pattern `XX XX XX YY 00 00 00 00 00 00 00 00 00 00 00 00`, where only the first 26 bits vary: the first three bytes (`XX`) are fully random, the fourth byte (`YY`) is restricted to the range `0x00–0x03`, and the remaining twelve bytes are always zero.
 
 This weakness becomes particularly significant when examining how the malware encrypts its network traffic, as the generated AES keys are used directly in the `send_message` routine.
-#### AES Usage and Double Encryption
+### AES Usage and Double Encryption
 Inspection of the `send_message` routine revealed that outbound messages are encrypted **twice** using AES-128 in ECB mode:
 - Plaintext is encrypted with the first AES key
 - The resulting ciphertext is encrypted again using a second AES key
@@ -156,15 +156,15 @@ Message decryption occurs in the reverse order:
 	![Task5-7.png](Images/Task5-7.png)
 
 Although double encryption might appear to add security, the extremely weak key generation combined with ECB mode negates any real cryptographic benefit.
-#### Meet-in-the-Middle Attack Feasibility
+### Meet-in-the-Middle Attack Feasibility
 This construction makes the malware vulnerable to a meet-in-the-middle (MITM) attack. Rather than brute-forcing both AES keys independently (which would be inefficient), an attacker can:
 - Encrypt a known plaintext block (16 bytes in size) with all possible values of the first key
 - Decrypt the observed ciphertext block with all possible values of the second key
 - Match the intermediate results to recover both keys efficiently
 This approach reduces the effective attack complexity to a manageable level given the extremely low key entropy. As a result, the attack is feasible because the effective key space is small enough to allow full enumeration on modern hardware.
-#### Known Plaintext Identification
+### Known Plaintext Identification
 The packet capture provided sufficient known plaintext to enable this attack. All application-level messages begin with the fixed byte sequence: `dec0dec0ffee`. Additionally, during the application handshake phase, the malware sends a known 16-byte plaintext containing: `dec0dec0ffeeREQCONN_OK`. This plaintext appears in the second encrypted message captured in the PCAP, making it an ideal candidate for the MITM attack.
-#### Key Recovery and Message Decryption
+### Key Recovery and Message Decryption
 Using this known plaintext and the weak key structure, I implemented a Python script to perform the meet-in-the-middle attack and recover both AES session keys. 
 ```python
 from Crypto.Cipher import AES
@@ -241,5 +241,5 @@ b'\xde\xc0\xde\xc0\xff\xeehttps://198.51.100.166/mattermost/PdGi6ciWUPS6G\x0b\x0
 ```
 
 The first two messages belong to the application handshake shown earlier. Afterward, the client requests a Mattermost URL from the server, which it provides in the final message.
-### Result
+## Result
 The Mattermost URL `https://198.51.100.166/mattermost/PdGi6ciWUPS6G` was submitted as the solution for Task 5.

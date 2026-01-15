@@ -1,11 +1,11 @@
 # Task 1 - Getting Started - (Forensics)
-### Date started: September 24, 2025
-### Date completed: September 24, 2025
-### Provided Materials
+## Date started: September 24, 2025
+## Date completed: September 24, 2025
+## Provided Materials
 - Zipped EXT2 image (image.ext2.zip)
-### Objective
+## Objective
 Analyze the ext2 image to identify a suspicious artifact and submit the SHA-1 hash of that artifact.
-### Analysis
+## Analysis
 I began by mounting the ext2 image in a Linux environment and surveying the filesystem structure. The image presented a standard Linux filesystem layout with many files left intact, indicating that the solution would require targeted analysis rather than brute-force file hashing of all contents.
 
 To determine how the system had been used, user accounts were enumerated by examining `/etc/passwd`. The only account capable of logging in was `root`, so I focused on root-owned artifacts. Within `/root`, a `.bash_history` file containing multiple command entries was identified.
@@ -57,5 +57,5 @@ U=/a/eca5d2ce6676f376ca2f8e639e58a2a2/xxyz
 P=20
 A=/app/www
 ```
-### Result
+## Result
 The remaining file `/etc/runlevels/nonetwork/saozwxecnm` was identified as the suspicious artifact. Its SHA-1 hash was calculated and submitted as the solution for Task 1.

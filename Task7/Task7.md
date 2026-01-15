@@ -1,20 +1,20 @@
 # Task 7 - Finale - (Vulnerability Research, Exploitation)
-### Date started: November 26, 2025
-### Date completed: December 22, 2025
-### Provided Materials
+## Date started: November 26, 2025
+## Date completed: December 22, 2025
+## Provided Materials
 - Custom app (mmarchiver.apk)
 - Licenses (licenses.txt)
-### Objective
+## Objective
 Submit a file to be posted to the Mattermost channel that will be processed by the app and exploits the device.
-### Analysis
-#### Application Environment Setup
+## Analysis
+### Application Environment Setup
 To analyze and interact with the provided application (`mmarchiver.apk`), a modern Android environment was required. I used Android Studio to create a new Android Virtual Device (AVD) running the latest available version. Once the emulator booted up, the APK was installed by dragging it directly into the emulator window.
 
 Upon installation, notifications needed to first be enabled via system settings. The app is appropriately titled `Mattermost Archiver` and uses the same icon as the official Mattermost client (as shown in the bottom right of the screenshot below).
 
 ![Task7-1.png](Images/Task7-1.png)
 
-#### Application Functionality Overview
+### Application Functionality Overview
 After launching the `Mattermost Archiver` app, the user is prompted to configure connection details for a Mattermost server. Based on runtime behavior and observed output, the app functions as an automated Mattermost archiver client.
 
 ![Task7-2.png](Images/Task7-2.png)
@@ -40,13 +40,13 @@ The screenshots shown below demonstrate the end-to-end workflow:
 
 ![Task7-5.png](Images/Task7-5.png)
 
-#### Security-Relevant Design Observations
+### Security-Relevant Design Observations
 Several characteristics of the application immediately stood out from a security perspective:
 - **Unrestricted file ingestion**: All files accessible via the Mattermost team are processed without filtering or validation.
 - **Implicit trust in file contents**: Files are treated as safe solely based on their ability in Mattermost, regardless of origin or structure.
 - **Automated processing pipeline**: Once started, the application downloads and processes files without additional user confirmation.
 These properties establish a critical trust boundary: any file uploaded to the Mattermost team may be parsed and processed automatically. This creates a clear opportunity for malicious file-based exploitation.
-#### Static Analysis - Decompiling Mattermost Archiver
+### Static Analysis - Decompiling Mattermost Archiver
 Because the application was distributed only as a compiled Android package (`.apk`) with no available source code, static analysis required reverse engineering the application’s bytecode into a human-readable language.
 
 Android applications written in Java are compiled into **Dalvik bytecode**, which runs on the Android Runtime. While optimized for execution, this format is not directly suitable for manual review. To analyze the internal logic, I decompiled the application back into Java source code using a multi-stage toolchain on **Windows 11**.
@@ -75,12 +75,12 @@ With the JAR archive available, I performed Java-level decompilation using two t
 - [Bytecode Viewer](https://github.com/Konloch/bytecode-viewer), a GUI-based decompiler used as a secondary reference when jadx struggled with specific classes
 
 Once decompiled, the source code could be inspected in Android Studio.
-#### Logging Behavior
+### Logging Behavior
 One notable observation from both static analysis and runtime behavior was the application’s extensive use of Android’s native `Log` utility. The app logs detailed information about file downloads, file paths, archive creation, exceptions during processing, and more.
 
 ![Task7-6.png](Images/Task7-6.png)
 
-#### Dynamic Analysis with Frida
+### Dynamic Analysis with Frida
 Rather than performing further static analysis, I opted to observe these logs directly during execution. To capture these runtime log messages, I used [Frida](https://github.com/frida/frida), a toolkit that allows method-level hooking in running Android applications. Because Frida requires elevated privileges on Android, I first rooted the Android Virtual Device using [rootAVD](https://gitlab.com/newbit/rootAVD), then installed the Frida server on the emulator. With Frida attached to the running process, I intercepted calls to Android's `Log` methods to capture debug output in real time.
 ```powershell
 frida -U -n "Mattermost Archiver" -l .\display_logs.js
@@ -124,7 +124,7 @@ Java.perform(function() {
 });
 ```
 
-#### Observed Runtime Behavior
+### Observed Runtime Behavior
 With Frida attached, application behavior became immediately transparent. For example, when uploading a simple PNG file, the logs clearly showed:
 - Server URL storage
 - Authentication state
@@ -161,7 +161,7 @@ Attaching...
 [I] [FileDownloadWorker] archived file pic_of_my_cat.png successfully
 [...]
 ```
-#### File Handling Behavior
+### File Handling Behavior
 Initial testing focused on how the application handled unsupported or unrecognized file formats (e.g., `tar` or `gz`). When encountering an unknown file type, the application attempts to dynamically load a format handler plugin from a designated directory. If the plugin is missing, it attempts to download it from a hardcoded remote URL (`dl.badguy.local`).
 
 Even when plugin download failed, the file was still archived:
@@ -196,7 +196,7 @@ ZIP files followed a completely different execution path. Rather than being trea
 ```
 
 This design introduced a second opportunity for format resolution, plugin invocation, and code execution—now occurring after extraction rather than at the archive boundary.
-#### Reverse Engineering the Plugin Loader
+### Reverse Engineering the Plugin Loader
 With this thought in mind, the next challenge was understanding how plugins were loaded and executed. When the app initially creates the format download directory, it logs the file path:
 `com.badguy.mmarchiver/cache/zippier/formats`. To understand what the app does with the `formats` directory, the decompiled Java source needed to be reviewed. The logic responsible for loading plugins was not held in the app's main package `(com.badguy.mmarchiver)`, so I searched for the string `getting format for` in the source code. The one result resides in an obfuscated function which retrieves the format handler corresponding to the file extension. 
 > Note: Some of the variables have been cleaned up in this snippet to improve readability. The original code was heavily obfuscated.
@@ -229,7 +229,7 @@ if (linkedHashMap.containsKey(file_extension)) {
 At a high level, the above snippet checks if a handler for `file_extension` is already loaded. If not, then the code checks whether a plugin JAR exists in the `formats` directory. The JAR name follows the naming schema `net.axolotl.zippier.ZipFormat_[file_extension].jar`. If present, the JAR is dynamically loaded using a class loader. If absent, the code attempts to download the plugin from the URL `dl.badguy.local`.
 
 The plugin-loading logic does not perform any integrity, signature, or validation checks on the JAR file or its code beforehand, introducing a critical vulnerability. If an attacker can place a malicious plugin in the `formats` directory with their own code, normal file processing will lead to **remote code execution (RCE)**.
-#### Directory Traversal Analysis
+### Directory Traversal Analysis
 Directory traversal vulnerabilities are a well-known risk in applications that extract archive files. ZIP archives can embed file paths within their entries, and if these paths are not properly normalized or validated, an attacker may write files outside the intended extraction directory. This can enable arbitrary file write primitives, which are particularly dangerous when combined with dynamic code loading or plugin mechanisms.
 
 Because `Mattermost Archiver` automatically extracts and processes ZIP files without user interaction, ZIP handling represented a high-value attack surface for testing traversal behavior.
@@ -262,7 +262,7 @@ The resulting log messages confirm that directory traversal was successful. No s
 [I] [FileDownloadWorker] file download failed, requeueing (error=FILE_ARCHIVE_FAILED)
 [...]
 ```
-#### Crafting a Malicious Plugin
+### Crafting a Malicious Plugin
 With the plugin requirements understood, I implemented a minimal malicious plugin that satisfied the loader’s expectations while executing attacker-controlled code. When dynamically loaded from the formats directory, the application expects the JAR to contain a class whose name matches the plugin filename. In this case, the target class was `net.axolotl.zippier.ZipFormat_tar`.
 
 I implemented malicious behavior within the plugin’s constructor, ensuring execution immediately upon class loading. The payload recursively deletes both the application’s internal data directory and all archived files stored on disk. The class was placed within the required `net.axolotl.zippier` package.
@@ -307,5 +307,5 @@ By uploading a specially named ZIP archive (`...zip`) containing
 1. `formats/net.axolotl.zippier.ZipFormat_tar.jar` (the JAR must also contain valid bytecode)
 2. A file with the `.tar` extension.
 …the application extracted the malicious tar plugin and executed my code during archive processing. This resulted in reliable **remote code execution (RCE)** on the device.
-### Results
+## Results
 A ZIP archive named `...zip` with the described structure was sufficient to trigger directory traversal, malicious plugin deployment, and remote code execution. This archive was submitted as the solution for Task 7.

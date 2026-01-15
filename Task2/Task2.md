@@ -1,11 +1,11 @@
 # Task 2 - The hunt continues - (Network Forensics)
-### Date started: September 24, 2025
-### Date completed: September 28, 2025
-### Provided Materials
+## Date started: September 24, 2025
+## Date completed: September 28, 2025
+## Provided Materials
 - PCAP file (traffic.pcap)
-### Objective
+## Objective
 Analyze the provided PCAP file and identify malicious activity. Submit all the IP addresses that are associated with the malicious device.
-### Analysis
+## Analysis
 I began by opening the provided PCAP file in Wireshark, which contained over 2,000 captured packets. Compared to Task 1, the dataset was noticeably larger and noisier. My first reviews consisted of scrolling through the packet entries from beginning to end to build context and identify potential malicious activity. Most traffic appeared to be legitimate, which added significant background noise.
 
 Early in the review, suspicious TCP communication was observed between an endpoint within the internal network (`192.168.3.89`) and an external server (`203.0.113.108`).
@@ -66,7 +66,7 @@ config interface 'to_openwrt2'
 [...]
 ```
 Reviewing the router configuration revealed three statically assigned IP addresses across different interfaces. The missing IP address was identified as the loopback address `127.5.3.3`.
-### Result
+## Result
 The following IP addresses were associated with the malicious device and submitted as the solution for Task 2:
 - `192.168.3.254`
 - `192.168.5.1`
